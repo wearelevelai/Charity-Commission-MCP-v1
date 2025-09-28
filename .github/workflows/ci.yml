@@ -23,7 +23,7 @@ jobs:
       - name: Check code style (format)
         run: dotnet tool update -g dotnet-format && dotnet format --verify-no-changes
       - name: Test
-        run: dotnet test CCEW.Mcp.sln --no-build --verbosity minimal
+        run: dotnet test CCEW.Mcp.sln --configuration Release --no-build --verbosity minimal
 
       # NuGet vulnerability scan
       - name: Scan NuGet vulnerabilities
