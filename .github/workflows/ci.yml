@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore CCEW.Mcp.sln
+      - name: Build
+        run: dotnet build CCEW.Mcp.sln --no-restore -c Release
+      - name: Check code style (format)
+        run: dotnet tool update -g dotnet-format && dotnet format --verify-no-changes
+      - name: Test
+        run: dotnet test CCEW.Mcp.sln --no-build --verbosity minimal
+
+      # NuGet vulnerability scan
+      - name: Scan NuGet vulnerabilities
+        run: |
+          set -o pipefail
+          dotnet list CCEW.Mcp.sln package --vulnerable --include-transitive | tee dotnet-audit.txt
+          if grep -Eiq 'Advisory URL' dotnet-audit.txt; then
+            echo "Vulnerable packages detected. Failing the build."
+            exit 1
+          else
+            echo "No vulnerable packages detected."
+          fi
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dotnet-audit
+          path: dotnet-audit.txt
+
+      # SBOM generation (CycloneDX JSON)
+      - name: Create SBOM directory
+        run: mkdir -p sbom
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom/bom.json
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sbom
+          path: sbom/bom.json

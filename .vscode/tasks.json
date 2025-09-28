@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "dotnet-test",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"${workspaceFolder}/CCEW.Mcp.sln",
+				"--nologo",
+				"--verbosity:minimal"
+			],
+			"problemMatcher": [
+				"$msCompile"
+			]
+		}
+	]
+}

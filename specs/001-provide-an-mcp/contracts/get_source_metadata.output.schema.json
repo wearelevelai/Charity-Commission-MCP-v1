@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "organisation": { "type": "string", "const": "charity-commission" },
+    "source": { "type": "string", "const": "GOV.UK Content API" },
+    "base_url": { "type": "string", "format": "uri" },
+    "documentation_url": { "type": "string", "format": "uri" }
+  },
+  "required": ["organisation", "source", "base_url", "documentation_url"]
+}
