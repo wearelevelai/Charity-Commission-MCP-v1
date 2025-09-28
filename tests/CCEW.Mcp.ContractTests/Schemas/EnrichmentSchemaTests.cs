@@ -1,6 +1,6 @@
+using System.Text.Json;
 using CCEW.Mcp.ContractTests.TestUtils;
 using FluentAssertions;
-using System.Text.Json;
 
 namespace CCEW.Mcp.ContractTests.Schemas;
 

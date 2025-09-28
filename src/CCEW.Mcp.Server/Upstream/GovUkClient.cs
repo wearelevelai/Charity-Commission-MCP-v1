@@ -78,8 +78,8 @@ public class GovUkClient(HttpClient http, ILogger<GovUkClient> logger) : IGovUkC
             return null;
         rsp.EnsureSuccessStatusCode();
         var json = await rsp.Content.ReadAsStringAsync(ct);
-    using var doc = JsonDocument.Parse(json);
-    var root = doc.RootElement.Clone();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement.Clone();
         var contentId = root.TryGetProperty("content_id", out var idEl) ? idEl.GetString() : null;
         var publicUpdatedAt = root.TryGetProperty("public_updated_at", out var puaEl) ? puaEl.GetString() : null;
         var canonicalPath = root.TryGetProperty("base_path", out var bpEl) ? bpEl.GetString() : normalized;

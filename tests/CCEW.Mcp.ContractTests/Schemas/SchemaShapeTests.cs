@@ -1,6 +1,6 @@
+using System.Text.Json;
 using CCEW.Mcp.ContractTests.TestUtils;
 using FluentAssertions;
-using System.Text.Json;
 
 namespace CCEW.Mcp.ContractTests.Schemas;
 
@@ -31,9 +31,9 @@ public class SchemaShapeTests
         using var doc = SchemaLoader.ReadJson(Path.Combine(ContractsRoot, "get_content_by_id.output.schema.json"));
         var root = doc.RootElement;
 
-    var required = root.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToHashSet();
-    var expected = new[] { "content", "url", "public_updated_at", "attribution", "content_id" };
-    required.Should().Contain(expected);
+        var required = root.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToHashSet();
+        var expected = new[] { "content", "url", "public_updated_at", "attribution", "content_id" };
+        required.Should().Contain(expected);
 
         var props = root.GetProperty("properties");
         props.TryGetProperty("content", out _).Should().BeTrue();

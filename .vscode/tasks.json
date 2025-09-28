@@ -7,119 +7,12 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
+				"${workspaceFolder}/CCEW.Mcp.sln",
 				"--nologo",
 				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
-			]
-		},
-		{
-			"label": "dotnet-test",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/CCEW.Mcp.sln",
-				"--nologo",
-				"--verbosity:minimal"
+			],
+			"problemMatcher": [
+				"$msCompile"
 			]
 		}
 	]

@@ -23,8 +23,8 @@ public class EnrichmentBehaviorTests : IClassFixture<WebApplicationFactory<Progr
             options = new { include_enrichment = true }
         };
 
-    using var client = _factory.CreateClient();
-    var resp = await client.PostAsJsonAsync("/tools/get_content_by_id", payload);
+        using var client = _factory.CreateClient();
+        var resp = await client.PostAsJsonAsync("/tools/get_content_by_id", payload);
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
@@ -46,8 +46,8 @@ public class EnrichmentBehaviorTests : IClassFixture<WebApplicationFactory<Progr
             options = new { include_enrichment = true }
         };
 
-    using var client = _factory.CreateClient();
-    var resp = await client.PostAsJsonAsync("/tools/get_content_by_path", payload);
+        using var client = _factory.CreateClient();
+        var resp = await client.PostAsJsonAsync("/tools/get_content_by_path", payload);
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);

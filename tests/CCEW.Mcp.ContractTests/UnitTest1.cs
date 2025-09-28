@@ -1,4 +1,4 @@
-﻿namespace CCEW.Mcp.ContractTests;
+namespace CCEW.Mcp.ContractTests;
 
 public class UnitTest1
 {
