@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "summary": { "type": "string" },
+          "public_updated_at": { "type": "string", "format": "date-time" },
+          "content_id": { "type": "string" }
+        },
+        "required": ["title", "url", "public_updated_at"]
+      }
+    },
+    "page": { "type": "integer" },
+    "pageSize": { "type": "integer" },
+    "total": { "type": "integer" }
+  },
+  "required": ["results"]
+}

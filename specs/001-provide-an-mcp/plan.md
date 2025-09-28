@@ -1,11 +1,11 @@
+# Implementation Plan: MCP server for Charity Commission (E&W) guidance
 
-# Implementation Plan: [FEATURE]
-
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-provide-an-mcp` | **Date**: 2025-09-28 | **Spec**: `/Users/sim0nall3n/Documents/GitHub/CCEW_MCP/specs/001-provide-an-mcp/spec.md`
+**Input**: Feature specification from `/specs/001-provide-an-mcp/spec.md`
 
 ## Execution Flow (/plan command scope)
-```
+
+```text
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
@@ -31,28 +31,40 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-[Extract from feature spec: primary requirement + technical approach from research]
+Provide an MCP server that exposes read-only Charity Commission (England & Wales)
+guidance hosted on GOV.UK via first-class MCP tools, enabling AI agents to
+search and retrieve guidance with strong provenance. Technical approach: .NET 8
+MCP server exposing tools `search_guidance`, `get_content_by_path`,
+`get_source_metadata`, `force_refresh`, and `get_error_taxonomy`. Read-only,
+provenance-preserving integration with GOV.UK Content API; deterministic request
+/ response schemas for agent reasoning; pagination and error taxonomy for robust
+automated handling.
 
+ 
 ## Technical Context
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: .NET 8 LTS  
+**Primary Dependencies**: MCP server framework/tooling (.NET), HttpClient for GOV.UK API, JSON processing  
+**Storage**: N/A (read-only; optional in-memory/ephemeral cache)  
+**Testing**: .NET xUnit; schema validation (JsonSchema.Net); WireMock.Net for upstream error simulation  
+**Target Platform**: Linux server (containerized), Azure-hosted agents consume via MCP  
+**Project Type**: single  
+**Performance Goals**: cached p95 < 300ms; live fetch p95 < 1000ms  
+**Constraints**: Strict read-only; provenance required; explicit TTLs; rate limiting; deterministic schemas; Pagination defaults clarified (20 per page, max 100)  
+**Scale/Scope**: External consumption by AI agents; result pagination (default 20, max 100)
 
+ 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+
+Initial Constitution Check: PASS
+Checked against Constitution v1.0.0 (2025-09-28): PASS
 
 ## Project Structure
 
 ### Documentation (this feature)
-```
+
+```text
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
 ├── research.md          # Phase 0 output (/plan command)
@@ -68,8 +80,7 @@ specs/[###-feature]/
   for this feature. Delete unused options and expand the chosen structure with
   real paths (e.g., apps/admin, packages/something). The delivered plan must
   not include Option labels.
--->
-```
+```text
 # [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
 ├── models/
@@ -80,7 +91,8 @@ src/
 tests/
 ├── contract/
 ├── integration/
-└── unit/
+├── unit/
+   └── CCEW.Mcp.ContractTests/
 
 # [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/
@@ -105,19 +117,16 @@ ios/ or android/
 └── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Single project. Adopt `src/` and `tests/` at repo root
+for .NET solution; add `tests/CCEW.Mcp.ContractTests` per contract scaffold.
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
-   - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
    ```
-   For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
    For each technology choice:
      Task: "Find best practices for {tech} in {domain}"
    ```
@@ -127,10 +136,10 @@ directories captured above]
    - Rationale: [why chosen]
    - Alternatives considered: [what else evaluated]
 
-**Output**: research.md with all NEEDS CLARIFICATION resolved
+**Output**: research.md with clarifications resolved
 
 ## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
+Prerequisite: research.md complete
 
 1. **Extract entities from feature spec** → `data-model.md`:
    - Entity name, fields, relationships
@@ -146,6 +155,7 @@ directories captured above]
    - One test file per endpoint
    - Assert request/response schemas
    - Tests must fail (no implementation yet)
+   - Validate requests/responses using JSON Schemas in `specs/001-provide-an-mcp/contracts/`
 
 4. **Extract test scenarios** from user stories:
    - Each story → integration test scenario
@@ -160,37 +170,28 @@ directories captured above]
    - Keep under 150 lines for token efficiency
    - Output to repository root
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/*, quickstart.md, agent-specific file (tests defined in scaffold for follow-up)
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+Note: This section describes what the /tasks command will do - do not execute during /plan.
 
 **Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
 
 **Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+Note: The following phases are beyond the scope of the /plan command.
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
-*Fill ONLY if Constitution Check has violations that must be justified*
+Note: Fill this section only if the Constitution Check has violations that must be justified.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
@@ -199,21 +200,9 @@ directories captured above]
 
 
 ## Progress Tracking
-*This checklist is updated during execution flow*
+Note: This checklist is updated during execution flow.
 
-**Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
-- [ ] Phase 3: Tasks generated (/tasks command)
-- [ ] Phase 4: Implementation complete
-- [ ] Phase 5: Validation passed
+**Phase Status**: Phase 0 research complete; Phase 1 design/contracts complete.  
+**Gate Status**: Constitution Check PASS (initial and post-design)
 
-**Gate Status**:
-- [ ] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
-- [ ] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
-
----
 *Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*

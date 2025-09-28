@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "content": { "type": "object" },
+    "url": { "type": "string", "format": "uri" },
+    "public_updated_at": { "type": "string", "format": "date-time" },
+    "attribution": { "type": "string" },
+    "disclaimer": { "type": "string" },
+    "content_id": { "type": "string" },
+    "enrichment": {
+      "type": "object",
+      "properties": {
+        "is_enrichment": { "type": "boolean", "const": true },
+        "notes": { "type": "string" }
+      },
+      "required": ["is_enrichment"],
+      "additionalProperties": true
+    }
+  },
+  "required": ["content", "url", "public_updated_at", "attribution"]
+}
