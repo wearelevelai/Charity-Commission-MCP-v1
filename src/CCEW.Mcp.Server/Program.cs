@@ -233,7 +233,16 @@ app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govu
             PublicTimestampFrom: from,
             PublicTimestampTo: to
         );
-        var cacheKey = $"search:{query}:{page}:{pageSize}:{organisation}:{format}:{from?.ToString("o")}:{to?.ToString("o")}";
+        var cacheKey = JsonSerializer.Serialize(new {
+            type = "search",
+            query,
+            page,
+            pageSize,
+            organisation,
+            format,
+            from = from?.ToString("o"),
+            to = to?.ToString("o")
+        });
         var upstream = await cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(searchTtlSeconds);
