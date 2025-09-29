@@ -68,7 +68,11 @@ foreach (var file in files)
     sb.AppendLine();
 }
 
-Directory.CreateDirectory(Path.GetDirectoryName(outputFile)!);
+var dir = Path.GetDirectoryName(outputFile);
+if (!string.IsNullOrEmpty(dir))
+{
+    Directory.CreateDirectory(dir);
+}
 await File.WriteAllTextAsync(outputFile, sb.ToString());
 Console.WriteLine($"Wrote API reference: {outputFile}");
 return 0;
