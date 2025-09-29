@@ -46,6 +46,39 @@ See `specs/001-provide-an-mcp/quickstart.md` for run instructions and request/re
 
 - CI runs on pushes/PRs to main (see badge above).
 
+### Run locally
+
+Minimal run:
+
+```bash
+dotnet run --project src/CCEW.Mcp.Server
+```
+
+Environment variables (optional tuning):
+
+- RATE_LIMIT_PER_WINDOW (default: 60)
+- RATE_LIMIT_WINDOW_SECONDS (default: 60)
+- CACHE_TTL_SEARCH_SECONDS (default: 30)
+- CACHE_TTL_CONTENT_SECONDS (default: 60)
+
+Health: <http://localhost:5240/healthz> (actual port may vary unless you set ASPNETCORE_URLS)
+
+### Container
+
+Build and run the container:
+
+```bash
+docker build -t ccew-mcp:local .
+docker run -p 8080:8080 \
+  -e RATE_LIMIT_PER_WINDOW=60 \
+  -e RATE_LIMIT_WINDOW_SECONDS=60 \
+  -e CACHE_TTL_SEARCH_SECONDS=30 \
+  -e CACHE_TTL_CONTENT_SECONDS=60 \
+  ccew-mcp:local
+```
+
+Health: <http://localhost:8080/healthz>
+
 ### CI security and compliance
 
 The GitHub Actions workflow includes:

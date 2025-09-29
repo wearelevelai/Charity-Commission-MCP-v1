@@ -4,11 +4,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CCEW.Mcp.Server.Upstream;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
 using Serilog;
 using Serilog.Context;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +33,32 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 
 // Access HttpContext for outbound header propagation
 builder.Services.AddHttpContextAccessor();
+
+// Memory cache for response caching
+builder.Services.AddMemoryCache();
+
+// Global rate limiter (fixed window). Defaults can be tuned via env vars.
+var permitLimit = int.TryParse(Environment.GetEnvironmentVariable("RATE_LIMIT_PER_WINDOW"), out var p) ? Math.Max(1, p) : 60;
+var windowSeconds = int.TryParse(Environment.GetEnvironmentVariable("RATE_LIMIT_WINDOW_SECONDS"), out var w) ? Math.Max(1, w) : 60;
+var searchTtlSeconds = int.TryParse(Environment.GetEnvironmentVariable("CACHE_TTL_SEARCH_SECONDS"), out var sTtl) ? Math.Max(1, sTtl) : 30;
+var contentTtlSeconds = int.TryParse(Environment.GetEnvironmentVariable("CACHE_TTL_CONTENT_SECONDS"), out var cTtl) ? Math.Max(1, cTtl) : 60;
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        // Single global partition; could be extended by IP if desired
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: "global",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimit,
+                Window = TimeSpan.FromSeconds(windowSeconds),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
 
 // Upstream GOV.UK HttpClient with resiliency (register BEFORE Build)
 builder.Services.AddHttpClient<IGovUkClient, GovUkClient>(client =>
@@ -85,6 +114,9 @@ app.Use(async (context, next) =>
 app.UseHttpMetrics();
 app.MapMetrics("/metrics/prom");
 
+// Apply rate limiter globally but exclude health and metrics routes
+app.UseRateLimiter();
+
 // Health (explicit serialize to avoid PipeWriter issues under mixed runtimes)
 app.MapGet("/healthz", () =>
 {
@@ -95,7 +127,7 @@ app.MapGet("/healthz", () =>
         WriteIndented = false
     });
     return Results.Text(json, "application/json");
-});
+}).DisableRateLimiting();
 
 // Basic metrics endpoint (JSON)
 app.MapGet("/metrics", () =>
@@ -119,10 +151,10 @@ app.MapGet("/metrics", () =>
         WriteIndented = false
     });
     return Results.Text(json, "application/json");
-});
+}).DisableRateLimiting();
 
 // Tool endpoints (stubs with gradual upstream wiring)
-app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govuk, CancellationToken ct) =>
+app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govuk, IMemoryCache cache, CancellationToken ct) =>
 {
     var query = body.TryGetProperty("query", out var qEl) ? qEl.GetString() : null;
     if (string.IsNullOrWhiteSpace(query))
@@ -201,10 +233,24 @@ app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govu
             PublicTimestampFrom: from,
             PublicTimestampTo: to
         );
-        var upstream = await govuk.SearchAsync(req, ct);
+        var cacheKey = JsonSerializer.Serialize(new {
+            type = "search",
+            query,
+            page,
+            pageSize,
+            organisation,
+            format,
+            from = from?.ToString("o"),
+            to = to?.ToString("o")
+        });
+        var upstream = await cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(searchTtlSeconds);
+            return await govuk.SearchAsync(req, ct);
+        });
 
         // Stable ordering by public_timestamp descending
-        var ordered = upstream.Results
+        var ordered = (upstream?.Results ?? Array.Empty<GovUkSearchResultItem>())
             .OrderByDescending(r => DateTimeOffset.TryParse(r.PublicUpdatedAt, out var dt) ? dt : DateTimeOffset.MinValue)
             .ToList();
 
@@ -217,7 +263,7 @@ app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govu
             content_id = r.ContentId
         }).ToArray();
 
-        var payload = new { results = mapped, page, pageSize, total = upstream.Total };
+    var payload = new { results = mapped, page, pageSize, total = upstream?.Total ?? 0 };
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -248,7 +294,7 @@ app.MapPost("/tools/search_guidance", async (JsonElement body, IGovUkClient govu
     }
 });
 
-app.MapPost("/tools/get_content_by_path", async (JsonElement body, IGovUkClient govuk, CancellationToken ct) =>
+app.MapPost("/tools/get_content_by_path", async (JsonElement body, IGovUkClient govuk, IMemoryCache cache, CancellationToken ct) =>
 {
     var includeEnrichment = body.TryGetProperty("options", out var optEl)
         && optEl.ValueKind == JsonValueKind.Object
@@ -265,7 +311,12 @@ app.MapPost("/tools/get_content_by_path", async (JsonElement body, IGovUkClient 
     {
         try
         {
-            upstream = await govuk.GetContentByPathAsync(path!, ct);
+            var cacheKey = $"content:path:{path}";
+            upstream = await cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(contentTtlSeconds);
+                return await govuk.GetContentByPathAsync(path!, ct);
+            });
         }
         catch (HttpRequestException ex)
         {
@@ -306,7 +357,7 @@ app.MapPost("/tools/get_content_by_path", async (JsonElement body, IGovUkClient 
     return Results.Text(json, "application/json");
 });
 
-app.MapPost("/tools/get_content_by_id", async (JsonElement body, IGovUkClient govuk, CancellationToken ct) =>
+app.MapPost("/tools/get_content_by_id", async (JsonElement body, IGovUkClient govuk, IMemoryCache cache, CancellationToken ct) =>
 {
     var requestedId = body.TryGetProperty("content_id", out var idEl) ? idEl.GetString() : null;
 
@@ -325,7 +376,12 @@ app.MapPost("/tools/get_content_by_id", async (JsonElement body, IGovUkClient go
     {
         try
         {
-            upstream = await govuk.GetContentByIdAsync(requestedId!, ct);
+            var cacheKey = $"content:id:{requestedId}";
+            upstream = await cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(contentTtlSeconds);
+                return await govuk.GetContentByIdAsync(requestedId!, ct);
+            });
         }
         catch (HttpRequestException ex)
         {

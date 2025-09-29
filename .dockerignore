@@ -1,0 +1,30 @@
+# .NET build artifacts
+bin/
+obj/
+
+# Node/npm artifacts (if any)
+node_modules/
+
+# Git and IDE
+.git/
+.github/
+.vscode/
+.idea/
+
+# Local environment
+.env
+*.user
+*.suo
+
+# SBOM and logs
+sbom/
+*.log
+
+# Tests and tools outputs
+tools/**/bin/
+tools/**/obj/
+tests/**/bin/
+tests/**/obj/
+
+# Ignore specify caches
+.specify/cache/
