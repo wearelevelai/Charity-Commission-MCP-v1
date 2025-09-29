@@ -57,3 +57,43 @@ jobs:
         with:
           name: sbom
           path: sbom/bom.json
+
+      - name: Generate API reference from schemas
+        run: |
+          dotnet run --project tools/SchemaDocGen -- \
+            specs/001-provide-an-mcp/contracts \
+            specs/001-provide-an-mcp/api-reference.md
+      - name: Upload API reference
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: api-reference
+          path: specs/001-provide-an-mcp/api-reference.md
+
+  k6-smoke:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build Docker image
+        run: docker build -t ccew-mcp:ci .
+      - name: Run server container
+        run: |
+          docker run -d --name ccew-mcp -p 8080:8080 ccew-mcp:ci
+          # Wait for health
+          for i in {1..20}; do
+            if curl -sf http://localhost:8080/healthz | grep -q '"status":"ok"'; then echo ready; break; fi; sleep 2; done
+      - name: Run k6 smoke test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: perf/k6/search-smoke.js
+        env:
+          BASE_URL: http://localhost:8080
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker logs ccew-mcp || true
+      - name: Stop container
+        if: always()
+        run: |
+          docker rm -f ccew-mcp || true
