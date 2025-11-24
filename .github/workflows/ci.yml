@@ -47,7 +47,7 @@ jobs:
       - name: Create SBOM directory
         run: mkdir -p sbom
       - name: Generate SBOM (CycloneDX)
-        uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0
+        uses: anchore/sbom-action@fbfd9c6c189226748411491745178e0c2017392d # v0
         with:
           path: .
           format: cyclonedx-json
